@@ -1,0 +1,2 @@
+rootProject.name = "paging3-sandbox"
+include ':app'
