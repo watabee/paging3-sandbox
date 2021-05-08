@@ -9,12 +9,21 @@ import com.github.watabee.paging3sandbox.db.UserDao
 import com.github.watabee.paging3sandbox.network.GitHubApi
 import timber.log.Timber
 
+private const val CACHE_MILLIS = 5 * 60 * 1000L // 5min.
+
 @OptIn(ExperimentalPagingApi::class)
 class UserRemoteMediator(private val userDao: UserDao, private val gitHubApi: GitHubApi) : RemoteMediator<Int, User>() {
 
     override suspend fun initialize(): InitializeAction {
-        Timber.tag("UserRemoteMediator").d("initialize()")
-        return super.initialize()
+        val now = System.currentTimeMillis()
+        val updatedAt = userDao.getUpdatedAt() ?: 0
+        val diff = now - updatedAt
+        Timber.tag("UserRemoteMediator").d("initialize(), diff = $diff, CACHE_MILLIS = $CACHE_MILLIS")
+        return if (diff >= CACHE_MILLIS) {
+            InitializeAction.LAUNCH_INITIAL_REFRESH
+        } else {
+            InitializeAction.SKIP_INITIAL_REFRESH
+        }
     }
 
     override suspend fun load(loadType: LoadType, state: PagingState<Int, User>): MediatorResult {
@@ -24,12 +33,7 @@ class UserRemoteMediator(private val userDao: UserDao, private val gitHubApi: Gi
             LoadType.REFRESH -> null
             LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             LoadType.APPEND -> {
-                val lastUserId = userDao.getUserRemoteKey()
-                Timber.tag("UserRemoteMediator").d("load # lastUserId = $lastUserId")
-                if (lastUserId == null) {
-                    return MediatorResult.Success(endOfPaginationReached = true)
-                }
-                lastUserId
+                userDao.getLastUserId() ?: return MediatorResult.Success(endOfPaginationReached = true)
             }
         }
 
@@ -39,7 +43,12 @@ class UserRemoteMediator(private val userDao: UserDao, private val gitHubApi: Gi
         val perPage = if (isRefresh) state.config.initialLoadSize else state.config.pageSize
         return try {
             val users = gitHubApi.getUsers(since = loadKey, perPage = perPage)
-            userDao.update(users = users, lastUserId = users.lastOrNull()?.id, shouldClearData = isRefresh)
+            userDao.update(
+                users = users,
+                lastUserId = users.lastOrNull()?.id,
+                currentMillis = System.currentTimeMillis(),
+                isRefresh = isRefresh
+            )
 
             MediatorResult.Success(endOfPaginationReached = false)
         } catch (e: Throwable) {

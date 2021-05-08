@@ -20,25 +20,22 @@ abstract class UserDao {
     @Query("DELETE FROM users")
     abstract suspend fun deleteAll()
 
-    @Query("INSERT OR REPLACE INTO user_remote_keys (id, lastUserId) VALUES (1, :lastUserId)")
-    abstract suspend fun insertUserRemoteKey(lastUserId: Int)
+    @Query("INSERT OR REPLACE INTO user_management (id, lastUserId, updatedAt) VALUES (1, :lastUserId, :updatedAt)")
+    abstract suspend fun insertUserManagementData(lastUserId: Int?, updatedAt: Long)
 
-    @Query("DELETE FROM user_remote_keys")
-    abstract suspend fun deleteUserRemoteKey()
+    @Query("SELECT lastUserId FROM user_management WHERE id = 1")
+    abstract suspend fun getLastUserId(): Int?
 
-    @Query("SELECT lastUserId FROM user_remote_keys WHERE id = 1")
-    abstract suspend fun getUserRemoteKey(): Int?
+    @Query("SELECT updatedAt FROM user_management WHERE id = 1")
+    abstract suspend fun getUpdatedAt(): Long?
 
     @Transaction
-    open suspend fun update(users: List<User>, lastUserId: Int?, shouldClearData: Boolean) {
-        if (shouldClearData) {
+    open suspend fun update(users: List<User>, lastUserId: Int?, currentMillis: Long, isRefresh: Boolean) {
+        if (isRefresh) {
             deleteAll()
         }
         insertAll(users)
-        if (lastUserId != null) {
-            insertUserRemoteKey(lastUserId)
-        } else {
-            deleteUserRemoteKey()
-        }
+        val updatedAt = if (isRefresh) currentMillis else getUpdatedAt() ?: 0
+        insertUserManagementData(lastUserId, updatedAt)
     }
 }

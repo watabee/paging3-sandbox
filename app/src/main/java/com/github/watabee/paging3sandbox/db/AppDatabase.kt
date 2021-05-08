@@ -5,10 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.github.watabee.paging3sandbox.data.User
-import com.github.watabee.paging3sandbox.data.UserRemoteKey
+import com.github.watabee.paging3sandbox.data.UserManagement
 
 @Database(
-    entities = [User::class, UserRemoteKey::class],
+    entities = [User::class, UserManagement::class],
     version = 1,
     exportSchema = true
 )
