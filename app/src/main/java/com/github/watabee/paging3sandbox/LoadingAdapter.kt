@@ -19,6 +19,10 @@ class LoadingAdapter : RecyclerView.Adapter<LoadingViewHolder>() {
         // do nothing.
     }
 
+    override fun getItemViewType(position: Int): Int {
+        return R.layout.list_item_loading
+    }
+
     override fun getItemCount(): Int = if (showLoading) 1 else 0
 }
 
