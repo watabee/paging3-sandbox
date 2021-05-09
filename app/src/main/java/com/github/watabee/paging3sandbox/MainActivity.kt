@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.Button
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.ConcatAdapter
@@ -61,6 +62,10 @@ class MainActivity : AppCompatActivity() {
         val swipeRefreshLayout: SwipeRefreshLayout = findViewById(R.id.swipe_refresh_layout)
         swipeRefreshLayout.setOnRefreshListener { userAdapter.refresh() }
 
+        val errorView: View = findViewById(R.id.error_view)
+        val retryButton: Button = findViewById(R.id.retry_button)
+        retryButton.setOnClickListener { userAdapter.retry() }
+
         lifecycleScope.launch {
             viewModel.pagingData.collectLatest(userAdapter::submitData)
         }
@@ -68,6 +73,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             userAdapter.loadStateFlow.collectLatest { loadStates ->
                 swipeRefreshLayout.isRefreshing = loadStates.refresh is LoadState.Loading
+                errorView.isVisible = loadStates.refresh is LoadState.Error
                 loadingAdapter.showLoading = loadStates.append is LoadState.Loading
                 errorAdapter.showError = loadStates.append is LoadState.Error
             }
