@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">paging3-sandbox</string>
+    <string name="retry">RETRY</string>
 </resources>

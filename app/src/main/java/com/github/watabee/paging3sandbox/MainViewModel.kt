@@ -21,7 +21,7 @@ class MainViewModel @Inject constructor(userDao: UserDao, gitHubApi: GitHubApi) 
     val pagingData: Flow<PagingData<User>> =
         Pager(
             config = PagingConfig(pageSize = 30),
-            initialKey = 0,
+            initialKey = null,
             remoteMediator = UserRemoteMediator(userDao, gitHubApi),
             pagingSourceFactory = { userDao.findUsers() }
         ).flow.cachedIn(viewModelScope)

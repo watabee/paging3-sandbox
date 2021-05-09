@@ -29,10 +29,12 @@ class MainActivity : AppCompatActivity() {
 
         val userAdapter = UserAdapter()
         val loadingAdapter = LoadingAdapter()
+        val errorAdapter = ErrorAdapter { userAdapter.retry() }
         val adapter = ConcatAdapter(
             ConcatAdapter.Config.Builder().setIsolateViewTypes(false).build(),
             userAdapter,
-            loadingAdapter
+            loadingAdapter,
+            errorAdapter
         )
 
         val recyclerView: RecyclerView = findViewById(R.id.recycler_view)
@@ -40,7 +42,11 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = GridLayoutManager(this, 3).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
-                    return if (adapter.getItemViewType(position) == R.layout.list_item_loading) spanCount else 1
+                    return when (adapter.getItemViewType(position)) {
+                        R.layout.list_item_loading -> spanCount
+                        R.layout.list_item_error -> spanCount
+                        else -> 1
+                    }
                 }
             }
         }
@@ -63,6 +69,7 @@ class MainActivity : AppCompatActivity() {
             userAdapter.loadStateFlow.collectLatest { loadStates ->
                 swipeRefreshLayout.isRefreshing = loadStates.refresh is LoadState.Loading
                 loadingAdapter.showLoading = loadStates.append is LoadState.Loading
+                errorAdapter.showError = loadStates.append is LoadState.Error
             }
         }
     }
