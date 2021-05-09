@@ -29,6 +29,15 @@ abstract class UserDao {
     @Query("SELECT updatedAt FROM user_management WHERE id = 1")
     abstract suspend fun getUpdatedAt(): Long?
 
+    @Query("DELETE FROM user_management")
+    abstract suspend fun deleteUserManagementData()
+
+    @Transaction
+    open suspend fun clear() {
+        deleteAll()
+        deleteUserManagementData()
+    }
+
     @Transaction
     open suspend fun update(users: List<User>, lastUserId: Int?, currentMillis: Long, isRefresh: Boolean) {
         if (isRefresh) {

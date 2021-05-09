@@ -20,6 +20,7 @@ class UserRemoteMediator(private val userDao: UserDao, private val gitHubApi: Gi
         val diff = now - updatedAt
         Timber.tag("UserRemoteMediator").d("initialize(), diff = $diff, CACHE_MILLIS = $CACHE_MILLIS")
         return if (diff >= CACHE_MILLIS) {
+            userDao.clear()
             InitializeAction.LAUNCH_INITIAL_REFRESH
         } else {
             InitializeAction.SKIP_INITIAL_REFRESH
