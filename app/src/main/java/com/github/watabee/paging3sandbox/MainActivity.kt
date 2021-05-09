@@ -9,15 +9,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
+import androidx.paging.insertFooterItem
 import androidx.recyclerview.widget.ConcatAdapter
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -29,13 +28,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val userAdapter = UserAdapter()
-        val loadingAdapter = LoadingAdapter()
-        val errorAdapter = ErrorAdapter { userAdapter.retry() }
+        val footerAdapter = FooterAdapter { userAdapter.retry() }
         val adapter = ConcatAdapter(
             ConcatAdapter.Config.Builder().setIsolateViewTypes(false).build(),
             userAdapter,
-            loadingAdapter,
-            errorAdapter
+            footerAdapter
         )
 
         val recyclerView: RecyclerView = findViewById(R.id.recycler_view)
@@ -44,8 +41,7 @@ class MainActivity : AppCompatActivity() {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
                     return when (adapter.getItemViewType(position)) {
-                        R.layout.list_item_loading -> spanCount
-                        R.layout.list_item_error -> spanCount
+                        R.layout.list_item_footer -> spanCount
                         else -> 1
                     }
                 }
@@ -74,8 +70,7 @@ class MainActivity : AppCompatActivity() {
             userAdapter.loadStateFlow.collectLatest { loadStates ->
                 swipeRefreshLayout.isRefreshing = loadStates.refresh is LoadState.Loading
                 errorView.isVisible = loadStates.refresh is LoadState.Error
-                loadingAdapter.showLoading = loadStates.append is LoadState.Loading
-                errorAdapter.showError = loadStates.append is LoadState.Error
+                footerAdapter.loadState = loadStates.append
             }
         }
     }

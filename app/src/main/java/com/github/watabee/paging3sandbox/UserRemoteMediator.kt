@@ -7,6 +7,7 @@ import androidx.paging.RemoteMediator
 import com.github.watabee.paging3sandbox.data.User
 import com.github.watabee.paging3sandbox.db.UserDao
 import com.github.watabee.paging3sandbox.network.GitHubApi
+import kotlinx.coroutines.delay
 import timber.log.Timber
 
 private const val CACHE_MILLIS = 5 * 60 * 1000L // 5min.
@@ -50,6 +51,11 @@ class UserRemoteMediator(private val userDao: UserDao, private val gitHubApi: Gi
                 currentMillis = System.currentTimeMillis(),
                 isRefresh = isRefresh
             )
+
+            // WORKAROUND: リフレッシュ時は取得したデータが表示される前にフッターのローディング表示が先に行われてしまうため、一定時間 delay させる.
+            if (isRefresh) {
+                delay(200L)
+            }
 
             MediatorResult.Success(endOfPaginationReached = false)
         } catch (e: Throwable) {
